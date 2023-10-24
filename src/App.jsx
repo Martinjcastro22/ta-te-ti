@@ -1,40 +1,24 @@
 import { useState } from 'react'
+import confetti from 'canvas-confetti'
+import Square from './Square'
+import {TURNS, WINNER_COMBOS} from './constants'
+import {Winner} from './components/Winner'
 
 
-const TURNS = {
-  X : 'X',
-  O : 'O'
-}
-
-
-
-const Square = ({ children,isSelected, updateBoard, index }) => {
-  const className = `square ${isSelected ? 'is-selected' : ''}`
-
-  const handleClick = () => {
-    updateBoard(index)
-  }
-  return (
-    <div className={className} onClick={handleClick}>
-      {children}
-    </div>
-  )
-}
-
-const WINNER_COMBOS = [
-  [0, 1, 2],
-  [3, 4, 5],
-  [6, 7, 8],
-  [0, 3, 6],
-  [1, 4, 7],
-  [2, 5, 8],
-  [0, 4, 8],
-  [2, 4, 6]
-]
 function App() {
-  const [board, setBoard] = useState(Array(9).fill(null)) 
+  const [board, setBoard] = useState(() => {
+    const boardFromStorage = window.localStorage.getItem('board')
+    return boardFromStorage ? JSON.parse(boardFromStorage) : Array(9).fill(null)
+  }) 
 
-  const [turn, setTurn] = useState(TURNS.X)
+ 
+
+  const [turn, setTurn] = useState(() => {
+    const turnFromStorage = window.localStorage.getItem('turn')
+    return turnFromStorage ?? TURNS.X
+  })
+
+  
 
   const [winner, setWinner] = useState(null)
 
@@ -49,11 +33,14 @@ function App() {
     }
     return null
   }
-    
+    //reset game
   const resetGame = () => {
     setBoard(Array(9).fill(null))
     setTurn(TURNS.X)
     setWinner(null)
+
+    window.localStorage.removeItem('board')
+    window.localStorage.removeItem('turn')
   }
 
 
@@ -72,9 +59,13 @@ function App() {
     //cambia de turno
     const newTurn = turn === TURNS.X ? TURNS.O : TURNS.X
     setTurn(newTurn)
+    //guardar aqui la partida
+    window.localStorage.setItem('board', JSON.stringify(newBoard))
+    window.localStorage.setItem('turn', newTurn)
     //verifica si hay ganador
     const newWinner = checkWinner(newBoard);
     if (newWinner) {
+      confetti()
       setWinner(newWinner);
     } else if (checkEndGame(newBoard)) {
       setWinner(false)
@@ -102,7 +93,7 @@ function App() {
         }
           
         )
-      }  
+      }
       </section>
 
       <section className='turn'>
@@ -113,30 +104,7 @@ function App() {
       </section>
 
       <section>
-        {
-          //winner diferente a null
-          winner !== null && (
-            <section className='winner'>
-              <div className='text'>
-                <h2>
-                  {
-                  winner === false
-                  ? 'Empate'
-                  : `El ganador es:`
-                    
-                    }
-                </h2>
-
-                <header className='win'>
-                    {winner && <Square>{winner}</Square>}
-                </header>
-                <footer>
-                  <button onClick={resetGame}>Reiniciar</button>
-                </footer>    
-              </div>
-            </section>
-          )
-        }
+        <Winner resetGame={resetGame} winner={winner}/>
       </section>
     </main>
       
